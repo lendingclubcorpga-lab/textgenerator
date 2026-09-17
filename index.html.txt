@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; }
+        input, button, textarea { width: 100%; margin-top: 10px; padding: 10px; box-sizing: border-box; }
+        textarea { height: 120px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+
+    <h2>Personalized Message Generator</h2>
+    
+    <label for="firstName">Enter First Name:</label>
+    <input type="text" id="firstName" placeholder="John" oninput="generateMessage()">
+
+    <label for="output">Your Message (Click to Copy):</label>
+    <textarea id="output" readonly></textarea>
+    
+    <button onclick="copyToClipboard()">Copy Message</button>
+
+    <script>
+        // Edit your fixed message template here
+        function generateMessage() {
+            const name = document.getElementById('firstName').value || "[Name]";
+            
+            // Your fixed template structure
+            const template = `Hi ${name},
+
+I hope you are doing well. I wanted to reach out and follow up on our last conversation. Let me know when you are free to connect!
+
+Best regards,
+Your Name`;
+
+            document.getElementById('output').value = template;
+        }
+
+        function copyToClipboard() {
+            const outputText = document.getElementById('output');
+            outputText.select();
+            document.execCommand('copy');
+            alert('Copied to clipboard!');
+        }
+
+        // Run once on load to show template
+        generateMessage();
+    </script>
+
+</body>
+</html>

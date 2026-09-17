@@ -3,34 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Message Generator</title>
+    <title>Bulk Message Generator</title>
+    <!-- SheetJS Library to read Excel files -->
+    <script src="https://jsdelivr.net"></script>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; }
-        input, button, textarea { width: 100%; margin-top: 10px; padding: 10px; box-sizing: border-box; }
-        textarea { height: 120px; }
-        button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
-        button:hover { background: #0056b3; }
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 20px; color: #333; }
+        .upload-section { background: #f4f6f9; padding: 20px; border-radius: 8px; border: 2px dashed #cbd5e1; text-align: center; margin-bottom: 20px; }
+        input[type="file"] { margin-top: 10px; }
+        .message-card { background: #fff; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
+        .message-text { white-space: pre-wrap; background: #fafafa; padding: 10px; border-radius: 4px; border: 1px solid #edf2f7; font-size: 14px; margin-top: 8px; }
+        .copy-btn { background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; float: right; }
+        .copy-btn:hover { background: #218838; }
+        .name-tag { font-weight: bold; color: #4a5568; }
+        .clear { clear: both; }
     </style>
 </head>
 <body>
 
-    <h2>Personalized Message Generator</h2>
-    
-    <label for="firstName">Enter First Name:</label>
-    <input type="text" id="firstName" placeholder="John" oninput="generateMessage()">
+    <h2>📋 Bulk Personalized Message Generator</h2>
+    <p>Upload your Excel sheet to automatically generate messages for everyone in the list.</p>
 
-    <label for="output">Your Message (Click to Copy):</label>
-    <textarea id="output" readonly></textarea>
-    
-    <button onclick="copyToClipboard()">Copy Message</button>
+    <div class="upload-section">
+        <label style="font-weight: bold;">Upload Excel File (.xlsx or .xls):</label><br>
+        <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="handleFile(event)">
+    </div>
+
+    <div id="resultContainer"></div>
 
     <script>
-        // Edit your fixed message template here
-        function generateMessage() {
-            const name = document.getElementById('firstName').value || "[Name]";
-            
-            // Your fixed template structure
-            const template = `Hi ${name},
+        let excelData = [];
+
+        function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // Get the first sheet
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Convert sheet to JSON array of objects
+                excelData = XLSX.utils.sheet_to_json(worksheet);
+                
+                generateAllMessages();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function generateAllMessages() {
+            const container = document.getElementById('resultContainer');
+            container.innerHTML = ''; // Clear previous results
+
+            if (excelData.length === 0) {
+                container.innerHTML = '<p style="color: red;">No data found in the Excel file.</p>';
+                return;
+            }
+
+            excelData.forEach((row, index) => {
+                // Match your Excel column names exactly here (case-sensitive)
+                // If your columns are named differently, change 'First Name' and 'Last Name'
+                const firstName = row['First Name'] || '';
+                const lastName = row['Last Name'] || '';
+                
+                // Fallback if columns don't match exactly
+                if (!firstName && !lastName) return; 
+
+                // Your Fixed Template structure
+                const message = `Hello ${firstName} ${lastName},
+
 
 Attention Required as your credit limit for loan application has been updated. We appreciate your interest in us. A Personal loan of $5000 is now available in your profile.
 * LOAN APP ID:AFPL21102026
@@ -40,20 +84,41 @@ Attention Required as your credit limit for loan application has been updated. W
 Same day Loan process kindly reply (YES)
 
 T&C Apply
-AVATNT FINANCE`;
+AVANT FINANCE`;
 
-            document.getElementById('output').value = template;
+                // Create visual card for each person
+                const card = document.createElement('div');
+                card.className = 'message-card';
+                
+                card.innerHTML = `
+                    <button class="copy-btn" onclick="copyText(this, ${index})">Copy</button>
+                    <span class="name-tag">👤 ${firstName} ${lastName}</span>
+                    <div class="message-text" id="msg-${index}">${message}</div>
+                    <div class="clear"></div>
+                `;
+                
+                container.appendChild(card);
+            });
         }
 
-        function copyToClipboard() {
-            const outputText = document.getElementById('output');
-            outputText.select();
-            document.execCommand('copy');
-            alert('Copied to clipboard!');
+        function copyText(button, id) {
+            const textElement = document.getElementById(`msg-${id}`);
+            
+            // Copy text to clipboard
+            navigator.clipboard.writeText(textElement.innerText).then(() => {
+                // Visual feedback on button
+                const originalText = button.innerText;
+                button.innerText = 'Copied! ✓';
+                button.style.background = '#007bff';
+                
+                setTimeout(() => {
+                    button.innerText = originalText;
+                    button.style.background = '#28a745';
+                }, 1500);
+            }).catch(err => {
+                alert('Failed to copy text: ', err);
+            });
         }
-
-        // Run once on load to show template
-        generateMessage();
     </script>
 
 </body>
